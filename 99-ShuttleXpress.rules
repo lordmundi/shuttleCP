@@ -1,0 +1,6 @@
+
+# Allows global read access to any ShuttleXpress device
+
+# install this file in /etc/udev/rules.d
+
+ATTRS{name}=="Contour Design ShuttleXpress" MODE="0644"

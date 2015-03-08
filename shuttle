@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec sudo ./shuttlecp /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
