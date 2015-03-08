@@ -27,38 +27,33 @@ has already opened the port at the correct baud rate.
 (written for Raspbian, but should work for others)
 
 1. Ensure openssl dev libraries are installed:
+
 ```
  sudo apt-get install libssl-dev build-essential
 ```
 
-2. Download the nopoll library from here: http://www.aspl.es/nopoll/downloads/
-(I'm currently using version 0.2.7.b164 because I got a strange linking error when
-I tried to compile 0.2.8.b184 for some odd reason.  Feel free to try both).  
-Extract, configure, make, and install the nopoll library with the usual:
+2. Download the nopoll library from here: http://www.aspl.es/nopoll/downloads/ (I'm currently using version 0.2.7.b164 because I got a strange linking error when I tried to compile 0.2.8.b184 for some odd reason.  Feel free to try both).  Extract, configure, make, and install the nopoll library with the usual:
+
 ```
  ./configure
  make
  sudo make install
 ```
 
-3. Take a git clone of the wiringPi utility and use their included build script
-to build and install the library. Instructions are here: http://wiringpi.com/download-and-install/
+3. Take a git clone of the wiringPi utility and use their included build script to build and install the library. Instructions are here: http://wiringpi.com/download-and-install/
 
-4. Go into the ShuttleCP directory and run "make". Make sure you've edited
-any items from the "Configuration" section above first.
+4. Go into the ShuttleCP directory and run "make". Make sure you've edited any items from the "Configuration" section above first.
+
 ```
  make
 ```
 
 ## Running:
 
-1. First, make sure SPJS is already running and ChiliPeppr has already opened a
-connection to your machine.  I run SPJS on the same raspberryPi that I run the
-ShuttleCP utility on.
+1. First, make sure SPJS is already running and ChiliPeppr has already opened a connection to your machine.  I run SPJS on the same raspberryPi that I run the ShuttleCP utility on.
 
-2. Start up shuttlecp with an argument that is the device interface for your
-ShuttleXpress.  Mine is /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
-Use sudo so that wiringPi has access to GPIO pins:
+2. Start up shuttlecp with an argument that is the device interface for your ShuttleXpress.  Mine is /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00 Use sudo so that wiringPi has access to GPIO pins:
+
 ```
  sudo ./shuttlecp /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
 ```
