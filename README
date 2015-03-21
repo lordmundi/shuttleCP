@@ -14,9 +14,10 @@ Configuration instructions:
 
 1. Edit shuttlecp.c and update the following items at the top of the file:
 
-#define SPJS_HOST     "localhost"        // Hostname where SPJS is running
-#define SPJS_PORT     "8989"             // Port for SPJS
-#define CYCLE_TIME_MICROSECONDS 100000   // time of each main loop iteration
+#define SPJS_HOST     "localhost"         // Hostname where SPJS is running
+#define SPJS_PORT     "8989"              // Port for SPJS
+#define TINYG         0                   // set to 1 if you are using a TinyG
+#define CYCLE_TIME_MICROSECONDS 100000    // time of each main loop iteration
 #define MAX_FEED_RATE 1500.0   // (unit per minute - initially tested with millimeters)
 #define OVERSHOOT     1.06     // amount of overshoot for shuttle wheel
 
