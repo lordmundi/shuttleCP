@@ -16,7 +16,7 @@
 #include "led_control.h"
 #include "websocket.h"
 
-#define SPJS_HOST     "localhost"        // Hostname where SPJS is running
+#define SPJS_HOST     "raspberrypi"        // Hostname where SPJS is running
 #define SPJS_PORT     "8989"             // Port for SPJS
 #define CYCLE_TIME_MICROSECONDS 100000   // time of each main loop iteration
 #define MAX_FEED_RATE 1500.0   // (unit per minute - initially tested with millimeters)
@@ -72,16 +72,19 @@ void key(unsigned short code, unsigned int value)
     char axis;
     float speed;
     char cmd[MAX_CMD_LENGTH];
+    short bcast_axis  = 0;
+    short bcast_speed = 0;
 
     // Only work on value == 1, which is the button down event
     if (value == 1) {
         switch (code) {
-            case X_AXIS_BUTTON: active_axis = X_AXIS_ACTIVE; break;
-            case Y_AXIS_BUTTON: active_axis = Y_AXIS_ACTIVE; break;
-            case Z_AXIS_BUTTON: active_axis = Z_AXIS_ACTIVE; break;
-            case A_AXIS_BUTTON: active_axis = A_AXIS_ACTIVE; break;
+            case X_AXIS_BUTTON: active_axis = X_AXIS_ACTIVE; bcast_axis = 1; break;
+            case Y_AXIS_BUTTON: active_axis = Y_AXIS_ACTIVE; bcast_axis = 1; break;
+            case Z_AXIS_BUTTON: active_axis = Z_AXIS_ACTIVE; bcast_axis = 1; break;
+            case A_AXIS_BUTTON: active_axis = A_AXIS_ACTIVE; bcast_axis = 1; break;
             case INCREMENT_BUTTON: {
                 active_speed = (active_speed + 1) % NUM_MOTION_SPEEDS;
+                bcast_speed = 1;
                 break;
             }
             default:
@@ -89,7 +92,13 @@ void key(unsigned short code, unsigned int value)
                 break;
         }
         get_axis_and_speed( &axis, &speed );
-        snprintf( cmd, MAX_CMD_LENGTH, "(commanding the %c axis at %.3f speed)\n", axis, speed );
+
+        // If we need to broadcast the active axis or speed, send that out.
+        if (bcast_axis) {
+            snprintf( cmd, MAX_CMD_LENGTH, "broadcast {\"id\":\"shuttlexpress\", \"action\":\"%c\"}\n", tolower(axis) );
+        } else if (bcast_speed) {
+            snprintf( cmd, MAX_CMD_LENGTH, "broadcast {\"id\":\"shuttlexpress\", \"action\":\"%.3fmm\"}\n", speed );
+        }
         cmd[MAX_CMD_LENGTH-1] = '\0';
         cmd_queue.push( &cmd_queue, cmd );
         fprintf(stderr, "%s", cmd);
