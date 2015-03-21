@@ -16,9 +16,10 @@
 #include "led_control.h"
 #include "websocket.h"
 
-#define SPJS_HOST     "raspberrypi"        // Hostname where SPJS is running
-#define SPJS_PORT     "8989"             // Port for SPJS
-#define CYCLE_TIME_MICROSECONDS 100000   // time of each main loop iteration
+#define SPJS_HOST     "localhost"         // Hostname where SPJS is running
+#define SPJS_PORT     "8989"              // Port for SPJS
+#define TINYG         0                   // set to 1 if you are using a TinyG
+#define CYCLE_TIME_MICROSECONDS 100000    // time of each main loop iteration
 #define MAX_FEED_RATE 1500.0   // (unit per minute - initially tested with millimeters)
 #define OVERSHOOT     1.06     // amount of overshoot for shuttle wheel
 
@@ -138,7 +139,11 @@ void shuttle(int value)
             // should help for TinyG.  In reality, for TinyG we should really send
             // a feed hold, then a wipe, then a resume.  Hopefully someone can 
             // implement and test this on a TinyG.  TODO
-            snprintf( cmd, MAX_CMD_LENGTH, "send /dev/ttyACM0 %%\n" );
+            if (TINYG) {
+                snprintf( cmd, MAX_CMD_LENGTH, "send /dev/ttyACM0 !%%\n" );
+            } else {
+                snprintf( cmd, MAX_CMD_LENGTH, "send /dev/ttyACM0 %%\n" );
+            }
             cmd_queue.push( &cmd_queue, cmd );
         } else {
             continuously_send_last_command = 1;
