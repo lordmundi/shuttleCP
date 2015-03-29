@@ -8,15 +8,9 @@ The code should be made more compatible with TinyG. Right now it
 only has limited testing on GRBL.
 
 The host and port should default to localhost:8989, but they should
-be made definable on the command line rather than hard-coded.
+be made definable on the command line rather than hard-coded. The
+same goes for the device path.
 
 The ability to run without sudo would be nice.  Might just involve
 writing up the instructions on how to do so that wiringPi provides.
 
-The scars are in the code to write out to LEDs on the raspberryPi
-and to read buttons attached.  This code should be finished up
-and documented to say where the leds and switches should be 
-hooked up on the pi.  One of these switches/buttons should be a 
-restart button that allows the main while loop to break and 
-re-initializes the hardware connection and the connection to SPJS.
-I call this the kill flag in the code.

@@ -1,7 +1,7 @@
 
 # Copyright 2013 Eric Messick (FixedImagePhoto.com/Contact)
 
-#CFLAGS=-g -W -Wall
+#CFLAGS=-g -W -Wall -I /usr/local/include/nopoll
 CFLAGS=-O3 -W -Wall -I /usr/local/include/nopoll
 
 INSTALL_DIR=/usr/local/bin
@@ -9,7 +9,8 @@ INSTALL_DIR=/usr/local/bin
 OBJ=\
 	shuttlecp.o\
 	websocket.o\
-	led_control.o
+	led_control.o\
+	raspi_switches.o
 
 all: shuttlecp
 
@@ -24,4 +25,5 @@ clean:
 
 shuttlecp.o: shuttle.h
 led_control.o: led_control.h
+raspi_switches.o: raspi_switches.h
 websocket.o: websocket.h

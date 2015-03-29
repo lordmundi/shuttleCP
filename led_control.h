@@ -18,16 +18,16 @@ typedef struct {
 } LED_STATES;
 
 
-#define LED_ONLINE               0
-#define LED_WEBSOCKET_CONNECTED  1
-#define LED_X_AXIS_ACTIVE        2
-#define LED_Y_AXIS_ACTIVE        3
-#define LED_Z_AXIS_ACTIVE        4
-#define LED_A_AXIS_ACTIVE        5
-#define LED_MOTION_SPEED_1       6
-#define LED_MOTION_SPEED_2       7
-#define LED_MOTION_SPEED_3       8
-#define LED_MOTION_SPEED_4       9
+#define LED_ONLINE               3
+#define LED_WEBSOCKET_CONNECTED  2
+#define LED_X_AXIS_ACTIVE        8
+#define LED_Y_AXIS_ACTIVE        9
+#define LED_Z_AXIS_ACTIVE        7
+#define LED_A_AXIS_ACTIVE        0
+#define LED_MOTION_SPEED_1       15
+#define LED_MOTION_SPEED_2       16
+#define LED_MOTION_SPEED_3       1
+#define LED_MOTION_SPEED_4       4
 
 
 

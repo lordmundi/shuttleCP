@@ -1,3 +1,12 @@
 #!/bin/bash
 
-exec sudo ./shuttlecp /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
+trap cleanup SIGINT EXIT
+function cleanup() {
+    for pin in 8 9 7 0 2 3 15 16 4 5; do
+        gpio write $pin 0
+    done
+}
+
+echo "Starting shuttleCP ..."
+sudo ./shuttlecp /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
+echo "Program terminated."

@@ -6,7 +6,7 @@ This code is meant to allow button, jog, and shuttle events from a Contour Shutt
 Interface to Shuttle Contour Xpress based on "Contour ShuttlePro v2 interface" by Eric Messick.
 
 ## Configuration, Building, and Running
-See README file.
+See README file.  See README_pinout.txt for hardware hookup information.
 
 ## Warning:
 This has only really been tested with GRBL and with a machine running in metric units.  If you set your machine to inches, my guess is that it will move much further than you intend it to.  If you are testing this utility out with your machine for the first time, make sure you are near an E-stop for your machine so you don't run into issues with it banging past its hard limits!

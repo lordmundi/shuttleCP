@@ -2,19 +2,16 @@
 #include "led_control.h"
 #include <wiringPi.h>
 
-// LED Pin - wiringPi pin 0 is BCM_GPIO 17.
-#define LED 0
-
 
 // initialize the led states structure and the hardware
 void initialize_led_states( LED_STATES *states ) {
-    states->online               = 1;
+    states->online               = 0;
     states->websocket_connected  = 0;
-    states->x_axis_active  = 1;
+    states->x_axis_active  = 0;
     states->y_axis_active  = 0;
     states->z_axis_active  = 0;
     states->a_axis_active  = 0;
-    states->motion_speed_1  = 1;
+    states->motion_speed_1  = 0;
     states->motion_speed_2  = 0;
     states->motion_speed_3  = 0;
     states->motion_speed_4  = 0;
