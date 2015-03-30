@@ -24,10 +24,10 @@ typedef struct {
 #define LED_Y_AXIS_ACTIVE        9
 #define LED_Z_AXIS_ACTIVE        7
 #define LED_A_AXIS_ACTIVE        0
-#define LED_MOTION_SPEED_1       15
-#define LED_MOTION_SPEED_2       16
-#define LED_MOTION_SPEED_3       1
-#define LED_MOTION_SPEED_4       4
+#define LED_MOTION_SPEED_1       4
+#define LED_MOTION_SPEED_2       1
+#define LED_MOTION_SPEED_3       16
+#define LED_MOTION_SPEED_4       15
 
 
 
