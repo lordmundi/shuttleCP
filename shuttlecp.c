@@ -43,10 +43,11 @@ int            need_synthetic_shuttle;
 
 LED_STATES    led_states;
 SWITCH_STATES raspi_switches;
-short int     websocket_connected = 0;
-short int     reconnect_requested = 0;
-ACTIVE_AXIS   active_axis         = X_AXIS_ACTIVE;
-ACTIVE_SPEED  active_speed        = MOTION_SPEED_4;
+short int     websocket_connected      = 0;
+short int     reconnect_requested      = 0;
+short int     shuttle_device_connected = 0;
+ACTIVE_AXIS   active_axis              = X_AXIS_ACTIVE;
+ACTIVE_SPEED  active_speed             = MOTION_SPEED_4;
 Queue         cmd_queue;
 char          lastcmd[MAX_CMD_LENGTH];
 short int     continuously_send_last_command;
@@ -86,8 +87,6 @@ void process_raspi_switches( SWITCH_STATES *sw )
     if (!sw->reconnect_requested && (sw->reconnect_requested != sw->prev_reconnect_requested)) {
         fprintf(stderr, "RECONNECT detected\n");
         reconnect_requested = 1;
-    } else {
-        reconnect_requested = 0;
     }
 }
 
@@ -299,6 +298,18 @@ void handle_event(EV ev)
     }
 }
 
+// A helper procedure to reset the program and cause the connection
+// to the websocket and to the shuttle device to be re-initialized.
+void reset_connections() {
+    fprintf(stderr, "============ Reinitializing connections\n");
+    cmd_queue.clear( &cmd_queue );
+    continuously_send_last_command = 0;
+    shuttle_device_connected = 0;
+    websocket_connected = 0;
+    update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
+    drive_leds( &led_states );
+}
+
 
 int
 main(int argc, char **argv)
@@ -307,7 +318,6 @@ main(int argc, char **argv)
     int nread;
     char *dev_name;
     int fd, num_cmds_in_queue, num_cmds_sent;
-    int first_time = 1;
     struct timeval time_start;
     struct timeval time_end;
     struct timeval time_taken;
@@ -338,108 +348,119 @@ main(int argc, char **argv)
     drive_leds( &led_states );
 
     cmd_queue = createQueue();
+    fd = -1;
+    shuttle_device_connected = 0;
 
     while (1) {
 
         // initialize - open websocket and open device
         snprintf(host, sizeof(host), SPJS_HOST);
         snprintf(port, sizeof(port), SPJS_PORT);
+        fprintf(stderr, "Attempting connection to %s:%s\n", host, port);
         while ( websocket_init( host, port ) ) {
             fprintf(stderr, "Attempting connection to %s:%s\n", host, port);
             usleep(1000000);
         }
         websocket_connected = 1;
         reconnect_requested = 0;
-        fprintf(stderr, "Connected.\n");
+        fprintf(stderr, "Websocket connected.\n");
+        update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
+        drive_leds( &led_states );
 
-        // Open the connection to the device
-        fd = open(dev_name, O_RDONLY);
-        if (fd < 0) {
-            perror(dev_name);
-            if (first_time) {
-                exit(1);
+        // Open the connection to the device - loop until
+        // we connect.
+        while (!shuttle_device_connected) {
+            fd = open(dev_name, O_RDONLY);
+            if (fd < 0) {
+                perror(dev_name);
+                sleep(1);
+                continue;
             }
-        } else {
+
             // Flag it as exclusive access
             if(ioctl( fd, EVIOCGRAB, 1 ) < 0) {
                 perror( "evgrab ioctl" );
-            } else {
+                sleep(1);
+                continue;
+            }
 
-                // The main loop we operate in
-                first_time = 0;
-                while (1) {
+            // if we get to here, we're connected
+            shuttle_device_connected = 1;
+            fprintf(stderr, "Shuttle device connected.\n");
+        }
 
-                    // if we have lost connection to the websocket, or if we have
-                    // a request to reconnect everything, then break
-                    // the loop so we can reinitialize everything.
-                    if (!websocket_connected || reconnect_requested) {
-                        fprintf(stderr, "============ Reinitializing jog dial interface\n");
-                        cmd_queue.clear( &cmd_queue );
-                        continuously_send_last_command = 0;
-                        websocket_connected = 0;
-                        update_led_states( &led_states, websocket_connected, active_axis, active_speed );
-                        drive_leds( &led_states );
+        // The main loop we operate in
+        while (1) {
+
+            // if we have lost connection to the websocket, or if we have
+            // a request to reconnect everything, then break
+            // the loop so we can reinitialize everything.
+            if (!websocket_connected || reconnect_requested) {
+                reset_connections();
+                break;
+            }
+
+            gettimeofday( &time_start, 0 );
+
+            // We are going to just select on the FD to see if a read
+            // would produce any data.  If not, we skip the read.
+            FD_ZERO(&set);
+            FD_SET(fd, &set);
+
+            while (select(fd+1, &set, NULL, NULL, &select_timeout)) {
+                // read jog controller events
+                nread = read(fd, &ev, sizeof(ev));
+                if (nread == sizeof(ev)) {
+                    handle_event(ev);
+                } else {
+                    if (nread < 0) {
+                        perror("read event");
+                        reconnect_requested = 1;
+                        shuttle_device_connected = 0;
                         break;
-                    }
-
-                    gettimeofday( &time_start, 0 );
-
-                    // We are going to just select on the FD to see if a read
-                    // would produce any data.  If not, we skip the read.
-                    FD_ZERO(&set);
-                    FD_SET(fd, &set);
-
-                    while (select(fd+1, &set, NULL, NULL, &select_timeout)) {
-                        // read jog controller events
-                        nread = read(fd, &ev, sizeof(ev));
-                        if (nread == sizeof(ev)) {
-                            handle_event(ev);
-                        } else {
-                            if (nread < 0) {
-                                perror("read event");
-                                break;
-                            } else {
-                                fprintf(stderr, "short read: %d\n", nread);
-                                break;
-                            }
-                        }
-                    }
-
-                    // read raspberry pi buttons/switches
-                    read_raspi_switches( &raspi_switches );
-                    process_raspi_switches( &raspi_switches );
-
-                    // send all queued commands over websocket
-                    if (websocket_connected) {
-                        num_cmds_in_queue = cmd_queue.size;
-                        num_cmds_sent = websocket_send_cmds( &cmd_queue );
-                        if (num_cmds_sent != num_cmds_in_queue) {
-                            websocket_connected = 0;
-                        }
-
-                        // If we should be continuously sending a cmd, enqueue it here
-                        if ( continuously_send_last_command && websocket_connected ) {
-                            cmd_queue.push( &cmd_queue, lastcmd );
-                        }
-                    }
-
-                    // update LEDs
-                    update_led_states( &led_states, websocket_connected, active_axis, active_speed );
-                    drive_leds( &led_states );
-
-                    // sleep until next cycle
-                    gettimeofday( &time_end, 0 );
-                    timersub( &time_end, &time_start, &time_taken );
-                    timersub( &cycle_time_us, &time_taken, &time_to_sleep );
-                    if (time_to_sleep.tv_sec < 0) {
-                        sleep_us = 0;
                     } else {
-                        sleep_us = time_to_sleep.tv_usec;
-                        usleep( sleep_us );
+                        fprintf(stderr, "short read: %d\n", nread);
+                        reconnect_requested = 1;
+                        shuttle_device_connected = 0;
+                        break;
                     }
                 }
             }
+
+            // read raspberry pi buttons/switches
+            read_raspi_switches( &raspi_switches );
+            process_raspi_switches( &raspi_switches );
+
+            // send all queued commands over websocket
+            if (websocket_connected) {
+                num_cmds_in_queue = cmd_queue.size;
+                num_cmds_sent = websocket_send_cmds( &cmd_queue );
+                if (num_cmds_sent != num_cmds_in_queue) {
+                    websocket_connected = 0;
+                }
+
+                // If we should be continuously sending a cmd, enqueue it here
+                if ( continuously_send_last_command && websocket_connected ) {
+                    cmd_queue.push( &cmd_queue, lastcmd );
+                }
+            }
+
+            // update LEDs
+            update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
+            drive_leds( &led_states );
+
+            // sleep until next cycle
+            gettimeofday( &time_end, 0 );
+            timersub( &time_end, &time_start, &time_taken );
+            timersub( &cycle_time_us, &time_taken, &time_to_sleep );
+            if (time_to_sleep.tv_sec < 0) {
+                sleep_us = 0;
+            } else {
+                sleep_us = time_to_sleep.tv_usec;
+                usleep( sleep_us );
+            }
         }
+
         close(fd);
         sleep(1);
     }

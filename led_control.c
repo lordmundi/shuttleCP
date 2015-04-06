@@ -33,9 +33,9 @@ void initialize_led_states( LED_STATES *states ) {
 
 
 // update the led states structure to match current program state
-void update_led_states( LED_STATES *states, short connected, ACTIVE_AXIS axis, ACTIVE_SPEED speed ) {
-    states->online               = 1;
-    states->websocket_connected  = (connected != 0);
+void update_led_states( LED_STATES *states, short dev_connected, short ws_connected, ACTIVE_AXIS axis, ACTIVE_SPEED speed ) {
+    states->online               = (dev_connected != 0);
+    states->websocket_connected  = (ws_connected != 0);
     states->x_axis_active        = (axis == X_AXIS_ACTIVE);
     states->y_axis_active        = (axis == Y_AXIS_ACTIVE);
     states->z_axis_active        = (axis == Z_AXIS_ACTIVE);

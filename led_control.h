@@ -32,7 +32,7 @@ typedef struct {
 
 
 void initialize_led_states( LED_STATES *states );
-void update_led_states( LED_STATES *states, short connected, ACTIVE_AXIS axis, ACTIVE_SPEED speed );
+void update_led_states( LED_STATES *states, short dev_connected, short ws_connected, ACTIVE_AXIS axis, ACTIVE_SPEED speed );
 void drive_leds( LED_STATES *states );
 
 #endif   /* LED_CONTROL_H - do not put anything below this line! */
