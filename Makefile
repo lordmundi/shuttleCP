@@ -5,6 +5,9 @@
 #CFLAGS=-g -W -Wall -I /usr/local/include/nopoll -DGPIO_SUPPORT=1
 CFLAGS=-O3 -W -Wall -I /usr/local/include/nopoll -DGPIO_SUPPORT=1
 
+# You can also remove wiringPi from the LIBS if you are removing GPIO_SUPPORT
+LIBS=-lwiringPi -lnopoll
+
 INSTALL_DIR=/usr/local/bin
 
 OBJ=\
@@ -19,7 +22,7 @@ install: all
 	install shuttle shuttlecp ${INSTALL_DIR}
 
 shuttlecp: ${OBJ}
-	gcc ${CFLAGS} ${OBJ} -o shuttlecp -lwiringPi -lnopoll -Wl,-rpath -Wl,/usr/local/lib
+	gcc ${CFLAGS} ${OBJ} -o shuttlecp ${LIBS} -Wl,-rpath -Wl,/usr/local/lib
 
 clean:
 	rm -f shuttlecp keys.h $(OBJ)
