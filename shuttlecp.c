@@ -13,10 +13,14 @@
 */
 
 #include "shuttle.h"
+
+#if GPIO_SUPPORT
 #include "led_control.h"
 #include "raspi_switches.h"
-#include "websocket.h"
 #include <wiringPi.h>
+#endif
+
+#include "websocket.h"
 
 #define SPJS_HOST     "localhost"         // Hostname where SPJS is running
 #define SPJS_PORT     "8989"              // Port for SPJS
@@ -41,8 +45,10 @@ int            shuttlevalue = 0xffff;
 struct timeval last_shuttle;
 int            need_synthetic_shuttle;
 
+#if GPIO_SUPPORT
 LED_STATES    led_states;
 SWITCH_STATES raspi_switches;
+#endif
 short int     websocket_connected      = 0;
 short int     reconnect_requested      = 0;
 short int     shuttle_device_connected = 0;
@@ -65,6 +71,7 @@ void generic_switch_command( const char *sw_name, char cmdchar ) {
     cmd_queue.push( &cmd_queue, cmd );
 }
 
+#if GPIO_SUPPORT
 // A procedure to look at the raspi switch states and if
 // one of them is pressed, queue up the appropriate command
 void process_raspi_switches( SWITCH_STATES *sw ) 
@@ -89,6 +96,7 @@ void process_raspi_switches( SWITCH_STATES *sw )
         reconnect_requested = 1;
     }
 }
+#endif
 
 // A helper procedure to return the character used for each axis
 // and the current speed/increment level.
@@ -306,8 +314,10 @@ void reset_connections() {
     continuously_send_last_command = 0;
     shuttle_device_connected = 0;
     websocket_connected = 0;
+#if GPIO_SUPPORT
     update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
     drive_leds( &led_states );
+#endif
 }
 
 
@@ -343,9 +353,11 @@ main(int argc, char **argv)
     dev_name = argv[1];
 
     // initialize LEDs and switches
+#if GPIO_SUPPORT
     initialize_led_states( &led_states );
     initialize_raspi_switch_states( &raspi_switches );
     drive_leds( &led_states );
+#endif
 
     cmd_queue = createQueue();
     fd = -1;
@@ -364,8 +376,10 @@ main(int argc, char **argv)
         websocket_connected = 1;
         reconnect_requested = 0;
         fprintf(stderr, "Websocket connected.\n");
+#if GPIO_SUPPORT
         update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
         drive_leds( &led_states );
+#endif
 
         // Open the connection to the device - loop until
         // we connect.
@@ -428,8 +442,10 @@ main(int argc, char **argv)
             }
 
             // read raspberry pi buttons/switches
+#if GPIO_SUPPORT
             read_raspi_switches( &raspi_switches );
             process_raspi_switches( &raspi_switches );
+#endif
 
             // send all queued commands over websocket
             if (websocket_connected) {
@@ -446,8 +462,10 @@ main(int argc, char **argv)
             }
 
             // update LEDs
+#if GPIO_SUPPORT
             update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
             drive_leds( &led_states );
+#endif
 
             // sleep until next cycle
             gettimeofday( &time_end, 0 );

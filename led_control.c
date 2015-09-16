@@ -1,4 +1,5 @@
 
+#if GPIO_SUPPORT
 #include "led_control.h"
 #include <wiringPi.h>
 
@@ -63,4 +64,5 @@ void drive_leds( LED_STATES *states ) {
     return;
 }
 
+#endif
 

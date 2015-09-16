@@ -1,8 +1,9 @@
 
 # Copyright 2013 Eric Messick (FixedImagePhoto.com/Contact)
 
-#CFLAGS=-g -W -Wall -I /usr/local/include/nopoll
-CFLAGS=-O3 -W -Wall -I /usr/local/include/nopoll
+# Change GPIO_SUPPORT to 0 to disable driving and reading of Raspi GPIO pins
+#CFLAGS=-g -W -Wall -I /usr/local/include/nopoll -DGPIO_SUPPORT=1
+CFLAGS=-O3 -W -Wall -I /usr/local/include/nopoll -DGPIO_SUPPORT=1
 
 INSTALL_DIR=/usr/local/bin
 
