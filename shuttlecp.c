@@ -1,11 +1,18 @@
 
 /*
 
- Jog Dial for ChiliPeppr
+ Jog Dial for ChiliPeppr and bCNC
 
  This code is meant to allow button, jog, and shuttle events flow
- to the Serial Port JSON server typically used with ChiliPeppr 
- driven CNC machines.
+ via a websocket connection
+ 
+ For Chilipeppr it connects to the Serial Port JSON server typically used 
+ with ChiliPeppr driven CNC machines.
+
+ For bCNC it connects to the HTTP server implemented in bCNC.  This server
+ is typically used for a simple HTML pendant-style control but is also
+ capable of sending gcode directly to GRBL
+ Note that bCNC is specific to GRBL only.  bCNC does not work with TinyG.
 
  Interface to Shuttle Contour Xpress based on "Contour ShuttlePro
  v2 interface" by Eric Messick.
@@ -18,10 +25,11 @@
 #include "websocket.h"
 #include <wiringPi.h>
 
-#define SPJS_HOST     "localhost"         // Hostname where SPJS is running
-#define SPJS_PORT     "8989"              // Port for SPJS
-#define DEVICE_PATH   "/dev/ttyACM0"      // really should be an argument to the program TODO
+#define WEBSOCKET_HOST     "localhost"    // Hostname where SPJS or bCNC is running
+#define WEBSOCKET_PORT     "8080"         // Port for SPJS or bCNC.  Typically 8686 for Chillipeppr and 8080 for bCNC
+#define DEVICE_PATH   "/dev/ttyACM0"      // Path for SPJS to connect to GRBL or TinyG.  Not used for bCNC
 #define TINYG         0                   // set to 1 if you are using a TinyG
+#define BCNC          1                   // set to 1 if you are using bCNC instead of Chilipeppr
 #define CYCLE_TIME_MICROSECONDS 100000    // time of each main loop iteration
 #define MAX_FEED_RATE 1500.0   // (unit per minute - initially tested with millimeters)
 #define OVERSHOOT     1.06     // amount of overshoot for shuttle wheel
@@ -58,7 +66,11 @@ short int     continuously_send_last_command;
 void generic_switch_command( const char *sw_name, char cmdchar ) {
     char cmd[MAX_CMD_LENGTH];
     fprintf(stderr, "%s detected\n", sw_name);
-    snprintf( cmd, MAX_CMD_LENGTH, "send %s %c\n", DEVICE_PATH, cmdchar );
+    if (!BCNC) {
+        snprintf( cmd, MAX_CMD_LENGTH, "send %s %c\n", DEVICE_PATH, cmdchar );
+    } else {
+        snprintf( cmd, MAX_CMD_LENGTH, "/send %c", cmdchar );
+    }
     cmd_queue.clear(&cmd_queue);  // clear all other commands
     continuously_send_last_command = 0;
     cmd[MAX_CMD_LENGTH-1] = '\0';
@@ -138,14 +150,16 @@ void key(unsigned short code, unsigned int value)
         get_axis_and_speed( &axis, &speed );
 
         // If we need to broadcast the active axis or speed, send that out.
-        if (bcast_axis) {
-            snprintf( cmd, MAX_CMD_LENGTH, "broadcast {\"id\":\"shuttlexpress\", \"action\":\"%c\"}\n", tolower(axis) );
-        } else if (bcast_speed) {
-            snprintf( cmd, MAX_CMD_LENGTH, "broadcast {\"id\":\"shuttlexpress\", \"action\":\"%.3fmm\"}\n", speed );
+        if (!BCNC) { // Only perform the following for Chilipeppr
+            if (bcast_axis) {
+                snprintf( cmd, MAX_CMD_LENGTH, "broadcast {\"id\":\"shuttlexpress\", \"action\":\"%c\"}\n", tolower(axis) );
+            } else if (bcast_speed) {
+                snprintf( cmd, MAX_CMD_LENGTH, "broadcast {\"id\":\"shuttlexpress\", \"action\":\"%.3fmm\"}\n", speed );
+            }
+            cmd[MAX_CMD_LENGTH-1] = '\0';
+            cmd_queue.push( &cmd_queue, cmd );
+            fprintf(stderr, "%s", cmd);
         }
-        cmd[MAX_CMD_LENGTH-1] = '\0';
-        cmd_queue.push( &cmd_queue, cmd );
-        fprintf(stderr, "%s", cmd);
     }
 }
 
@@ -178,16 +192,15 @@ void shuttle(int value)
         if ((value == 0) || (value == 1) || (value == -1)) {
             continuously_send_last_command = 0;
 
-            // Sending the wipe (%) command to GRBL doesn't really work, but this
+            // Sending the wipe (%) command to GRBL doesn't work, but this
             // should help for TinyG.  In reality, for TinyG we should really send
             // a feed hold, then a wipe, then a resume.  Hopefully someone can 
             // implement and test this on a TinyG.  TODO
             if (TINYG) {
                 snprintf( cmd, MAX_CMD_LENGTH, "send %s !%%\n", DEVICE_PATH );
-            } else {
-                snprintf( cmd, MAX_CMD_LENGTH, "send %s %%\n", DEVICE_PATH );
+                cmd_queue.push( &cmd_queue, cmd );
             }
-            cmd_queue.push( &cmd_queue, cmd );
+
         } else {
             continuously_send_last_command = 1;
             get_axis_and_speed( &axis, &speed );
@@ -199,7 +212,11 @@ void shuttle(int value)
             // overshoot factor.
             speed = speed * direction * value * (MAX_FEED_RATE / (7.0*INCREMENT4));
             distance = (speed/60.0) * (CYCLE_TIME_MICROSECONDS * OVERSHOOT / 1000000.0) * direction;
-            snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G1 F%.3f %c%.3f\nG90\n", DEVICE_PATH, speed, axis, distance );
+            if (!BCNC) {
+                snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G1 F%.3f %c%.3f\nG90\n", DEVICE_PATH, speed, axis, distance );
+            } else {
+                snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G1 F%.3f %c%.3f%0DG90", speed, axis, distance );
+            }
             strncpy( lastcmd, cmd, MAX_CMD_LENGTH ); 
             cmd[MAX_CMD_LENGTH-1] = lastcmd[MAX_CMD_LENGTH-1] = '\0';
             cmd_queue.push( &cmd_queue, cmd );
@@ -231,7 +248,11 @@ void jog(unsigned int value)
         direction = ((value - jogvalue) & 0x80) ? -1 : 1;
         get_axis_and_speed( &axis, &distance );
         distance *= direction;
-        snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G0 %c%.3f\nG90\n", DEVICE_PATH, axis, distance );
+        if (!BCNC) {
+            snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G0 %c%.3f\nG90\n", DEVICE_PATH, axis, distance );
+        } else {
+            snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G0 %c%.3f%0DG90", axis, distance );
+        }
         cmd[MAX_CMD_LENGTH-1] = '\0';
         cmd_queue.push( &cmd_queue, cmd );
         continuously_send_last_command = 0;
@@ -354,8 +375,8 @@ main(int argc, char **argv)
     while (1) {
 
         // initialize - open websocket and open device
-        snprintf(host, sizeof(host), SPJS_HOST);
-        snprintf(port, sizeof(port), SPJS_PORT);
+        snprintf(host, sizeof(host), WEBSOCKET_HOST);
+        snprintf(port, sizeof(port), WEBSOCKET_PORT);
         fprintf(stderr, "Attempting connection to %s:%s\n", host, port);
         while ( websocket_init( host, port ) ) {
             fprintf(stderr, "Attempting connection to %s:%s\n", host, port);
