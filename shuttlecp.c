@@ -215,7 +215,7 @@ void shuttle(int value)
             if (!BCNC) {
                 snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G1 F%.3f %c%.3f\nG90\n", DEVICE_PATH, speed, axis, distance );
             } else {
-                snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G1 F%.3f %c%.3f%0DG90", speed, axis, distance );
+                snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G1 F%.3f %c%.3f%%0DG90", speed, axis, distance );
             }
             strncpy( lastcmd, cmd, MAX_CMD_LENGTH ); 
             cmd[MAX_CMD_LENGTH-1] = lastcmd[MAX_CMD_LENGTH-1] = '\0';
@@ -251,7 +251,7 @@ void jog(unsigned int value)
         if (!BCNC) {
             snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G0 %c%.3f\nG90\n", DEVICE_PATH, axis, distance );
         } else {
-            snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G0 %c%.3f%0DG90", axis, distance );
+            snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G0 %c%.3f%%0DG90", axis, distance );
         }
         cmd[MAX_CMD_LENGTH-1] = '\0';
         cmd_queue.push( &cmd_queue, cmd );
