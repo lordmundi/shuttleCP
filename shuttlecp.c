@@ -6,13 +6,13 @@
  This code is meant to allow button, jog, and shuttle events flow
  via a websocket connection
  
- For Chilipeppr it connects to the Serial Port JSON server typically used 
+ For Chilipeppr it connects to the Serial Port JSON server (SPJS) typically used 
  with ChiliPeppr driven CNC machines.
 
  For bCNC it connects to the HTTP server implemented in bCNC.  This server
  is typically used for a simple HTML pendant-style control but is also
  capable of sending gcode directly to GRBL
- Note that bCNC is specific to GRBL only.  bCNC does not work with TinyG.
+ Note that at the time of this writing, bCNC is specific to GRBL only.  bCNC does not work with TinyG.
 
  Interface to Shuttle Contour Xpress based on "Contour ShuttlePro
  v2 interface" by Eric Messick.
@@ -25,8 +25,8 @@
 #include "websocket.h"
 #include <wiringPi.h>
 
-#define WEBSOCKET_HOST     "localhost"    // Hostname where SPJS or bCNC is running
-#define WEBSOCKET_PORT     "8080"         // Port for SPJS or bCNC.  Typically 8686 for Chillipeppr and 8080 for bCNC
+#define CNC_HOST     "localhost"    // Hostname where SPJS or bCNC is running
+#define CNC_PORT     "8080"         // Port for SPJS or bCNC.  Typically 8686 for Chillipeppr and 8080 for bCNC
 #define DEVICE_PATH   "/dev/ttyACM0"      // Path for SPJS to connect to GRBL or TinyG.  Not used for bCNC
 #define TINYG         0                   // set to 1 if you are using a TinyG
 #define BCNC          1                   // set to 1 if you are using bCNC instead of Chilipeppr
@@ -51,7 +51,7 @@ int            need_synthetic_shuttle;
 
 LED_STATES    led_states;
 SWITCH_STATES raspi_switches;
-short int     websocket_connected      = 0;
+short int     cnc_connected      = 0;
 short int     reconnect_requested      = 0;
 short int     shuttle_device_connected = 0;
 ACTIVE_AXIS   active_axis              = X_AXIS_ACTIVE;
@@ -326,8 +326,8 @@ void reset_connections() {
     cmd_queue.clear( &cmd_queue );
     continuously_send_last_command = 0;
     shuttle_device_connected = 0;
-    websocket_connected = 0;
-    update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
+    cnc_connected = 0;
+    update_led_states( &led_states, shuttle_device_connected, cnc_connected, active_axis, active_speed );
     drive_leds( &led_states );
 }
 
@@ -374,18 +374,26 @@ main(int argc, char **argv)
 
     while (1) {
 
-        // initialize - open websocket and open device
-        snprintf(host, sizeof(host), WEBSOCKET_HOST);
-        snprintf(port, sizeof(port), WEBSOCKET_PORT);
-        fprintf(stderr, "Attempting connection to %s:%s\n", host, port);
-        while ( websocket_init( host, port ) ) {
+        // Skip initialisation of websocket if bCNC is being used
+        if (!BCNC) {
+            // initialize - open websocket and open device
+            snprintf(host, sizeof(host), CNC_HOST);
+            snprintf(port, sizeof(port), CNC_PORT);
             fprintf(stderr, "Attempting connection to %s:%s\n", host, port);
-            usleep(1000000);
+            while ( websocket_init( host, port ) ) {
+                fprintf(stderr, "Attempting connection to %s:%s\n", host, port);
+                usleep(1000000);
+            }
+            cnc_connected = 1;
+            reconnect_requested = 0;
+            fprintf(stderr, "Websocket connected.\n");
         }
-        websocket_connected = 1;
-        reconnect_requested = 0;
-        fprintf(stderr, "Websocket connected.\n");
-        update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
+        else {
+            cnc_connected = 1;
+            reconnect_requested = 0;
+            fprintf(stderr, "HTTP used for bCNC.\n");            
+        }
+        update_led_states( &led_states, shuttle_device_connected, cnc_connected, active_axis, active_speed );
         drive_leds( &led_states );
 
         // Open the connection to the device - loop until
@@ -416,7 +424,7 @@ main(int argc, char **argv)
             // if we have lost connection to the websocket, or if we have
             // a request to reconnect everything, then break
             // the loop so we can reinitialize everything.
-            if (!websocket_connected || reconnect_requested) {
+            if (!cnc_connected || reconnect_requested) {
                 reset_connections();
                 break;
             }
@@ -452,22 +460,27 @@ main(int argc, char **argv)
             read_raspi_switches( &raspi_switches );
             process_raspi_switches( &raspi_switches );
 
-            // send all queued commands over websocket
-            if (websocket_connected) {
-                num_cmds_in_queue = cmd_queue.size;
-                num_cmds_sent = websocket_send_cmds( &cmd_queue );
-                if (num_cmds_sent != num_cmds_in_queue) {
-                    websocket_connected = 0;
+            // send all queued commands
+            if (cnc_connected) {
+
+                if (!BCNC) {
+                    num_cmds_in_queue = cmd_queue.size;
+                    num_cmds_sent = websocket_send_cmds( &cmd_queue );
+                    if (num_cmds_sent != num_cmds_in_queue) {
+                        cnc_connected = 0;
+                    }
+                } else {
+                    http_send_cmds( &cmd_queue, CNC_HOST, CNC_PORT);
                 }
 
                 // If we should be continuously sending a cmd, enqueue it here
-                if ( continuously_send_last_command && websocket_connected ) {
+                if ( continuously_send_last_command && cnc_connected ) {
                     cmd_queue.push( &cmd_queue, lastcmd );
                 }
             }
 
             // update LEDs
-            update_led_states( &led_states, shuttle_device_connected, websocket_connected, active_axis, active_speed );
+            update_led_states( &led_states, shuttle_device_connected, cnc_connected, active_axis, active_speed );
             drive_leds( &led_states );
 
             // sleep until next cycle
