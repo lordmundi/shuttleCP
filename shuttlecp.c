@@ -25,7 +25,7 @@
 #include "websocket.h"
 #include <wiringPi.h>
 
-#define CNC_HOST     "localhost"    // Hostname where SPJS or bCNC is running
+#define CNC_HOST     "127.0.0.1"    // Hostname where SPJS or bCNC is running
 #define CNC_PORT     "8080"         // Port for SPJS or bCNC.  Typically 8686 for Chillipeppr and 8080 for bCNC
 #define DEVICE_PATH   "/dev/ttyACM0"      // Path for SPJS to connect to GRBL or TinyG.  Not used for bCNC
 #define TINYG         0                   // set to 1 if you are using a TinyG
@@ -215,9 +215,9 @@ void shuttle(int value)
             if (!BCNC) {
                 snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G1 F%.3f %c%.3f\nG90\n", DEVICE_PATH, speed, axis, distance );
             } else {
-                snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G1 F%.3f %c%.3f%%0DG90", speed, axis, distance );
+                snprintf( cmd, MAX_CMD_LENGTH, "http://%s:%s/send?gcode=G91G1F%.3f%c%.3f%%0DG90", CNC_HOST, CNC_PORT, speed, axis, distance );
             }
-            strncpy( lastcmd, cmd, MAX_CMD_LENGTH ); 
+            strncpy( lastcmd, cmd, MAX_CMD_LENGTH );
             cmd[MAX_CMD_LENGTH-1] = lastcmd[MAX_CMD_LENGTH-1] = '\0';
             cmd_queue.push( &cmd_queue, cmd );
         }
@@ -251,11 +251,11 @@ void jog(unsigned int value)
         if (!BCNC) {
             snprintf( cmd, MAX_CMD_LENGTH, "send %s G91 G0 %c%.3f\nG90\n", DEVICE_PATH, axis, distance );
         } else {
-            snprintf( cmd, MAX_CMD_LENGTH, "/send G91 G0 %c%.3f%%0DG90", axis, distance );
+            snprintf( cmd, MAX_CMD_LENGTH, "http://%s:%s/send?gcode=G91G0%c%.3f%%0DG90", CNC_HOST, CNC_PORT, axis, distance );
         }
-        cmd[MAX_CMD_LENGTH-1] = '\0';
-        cmd_queue.push( &cmd_queue, cmd );
-        continuously_send_last_command = 0;
+        strncpy( lastcmd, cmd, MAX_CMD_LENGTH );
+        cmd[MAX_CMD_LENGTH-1] = lastcmd[MAX_CMD_LENGTH-1] = '\0';
+	cmd_queue.push( &cmd_queue, cmd );
     }
     jogvalue = value;
 
@@ -470,7 +470,7 @@ main(int argc, char **argv)
                         cnc_connected = 0;
                     }
                 } else {
-                    http_send_cmds( &cmd_queue, CNC_HOST, CNC_PORT);
+                    http_send_cmds( &cmd_queue);
                 }
 
                 // If we should be continuously sending a cmd, enqueue it here

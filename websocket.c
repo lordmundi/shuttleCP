@@ -83,25 +83,25 @@ int http_send_cmds( Queue* queue ) {
 
             CURL *curl;
             CURLcode res;
-             
+
             curl = curl_easy_init();
             if(curl) {
 
                 // Set the URL for the http GET
                 curl_easy_setopt(curl, CURLOPT_URL, cmd);
-             
-                /* Perform the request, res will get the return code */ 
+
+                /* Perform the request, res will get the return code */
                 res = curl_easy_perform(curl);
-                /* Check for errors */ 
+                /* Check for errors */
                 if(res != CURLE_OK) {
-                  fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                          curl_easy_strerror(res));                    
+                  fprintf(stderr, "curl_easy_perform() failed: %s %s\n",
+                          curl_easy_strerror(res), cmd);
                 } else {
                     fprintf(stderr, "     + Successfully sent cmd: %s\n", cmd);
                     num_sent++;
                 }
-             
-                /* always cleanup */ 
+
+                /* always cleanup */
                 curl_easy_cleanup(curl);
             } else {
                 fprintf(stderr, "Failed to establish curl instance\n");
