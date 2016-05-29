@@ -70,6 +70,50 @@ int websocket_send_cmds( Queue* queue ) {
     return num_sent;
 }
 
+
+int http_send_cmds( Queue* queue ) {
+    int num_sent = 0;
+    char cmd[MAX_CMD_LENGTH];
+
+    if (queue->size == 0)
+        return 0;
+    else { 
+        while (queue->size > 0) {
+            queue->pop( queue, cmd );
+
+            CURL *curl;
+            CURLcode res;
+
+            curl = curl_easy_init();
+            if(curl) {
+
+                // Set the URL for the http GET
+                curl_easy_setopt(curl, CURLOPT_URL, cmd);
+
+                /* Perform the request, res will get the return code */
+                res = curl_easy_perform(curl);
+                /* Check for errors */
+                if(res != CURLE_OK) {
+                  fprintf(stderr, "curl_easy_perform() failed: %s %s\n",
+                          curl_easy_strerror(res), cmd);
+                } else {
+                    fprintf(stderr, "     + Successfully sent cmd: %s\n", cmd);
+                    num_sent++;
+                }
+
+                /* always cleanup */
+                curl_easy_cleanup(curl);
+            } else {
+                fprintf(stderr, "Failed to establish curl instance\n");
+            }
+        }
+    }
+
+    fprintf(stderr, "Sent %d commands\n", num_sent);
+    return num_sent;
+
+}
+
 /**
  * Push an item into queue, if this is the first item,
  * both queue->head and queue->tail will point to it,

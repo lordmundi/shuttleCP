@@ -2,6 +2,7 @@
 #define WEBSOCKET_H
 
 #include <nopoll.h>
+#include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +36,7 @@ typedef struct Queue {
 int websocket_init( const char* hoststr, const char* portstr );
 int websocket_write( const char* cmdstr );
 int websocket_send_cmds( Queue* queue );
+int http_send_cmds( Queue* queue );
 void push (Queue* queue, const char cmd[MAX_CMD_LENGTH]);
 int pop (Queue* queue, char cmd[MAX_CMD_LENGTH]);
 int peek (Queue* queue, char cmd[MAX_CMD_LENGTH]);
