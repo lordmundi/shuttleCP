@@ -30,7 +30,7 @@ Build instructions:
 (written for Raspbian, but should work for others)
 
 1. Ensure openssl dev libraries are installed:
- sudo apt-get install libssl-dev build-essential
+ sudo apt-get install libssl-dev build-essential libcurl4-openssl-dev
 
 2. Download the nopoll library from here: http://www.aspl.es/nopoll/downloads/
 (I'm currently using version 0.2.7.b164 because I got a strange linking error when
