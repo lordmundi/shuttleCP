@@ -18,7 +18,7 @@ install: all
 	install shuttle shuttlecp ${INSTALL_DIR}
 
 shuttlecp: ${OBJ}
-	gcc ${CFLAGS} ${OBJ} -o shuttlecp -lwiringPi -lnopoll -Wl,-rpath -Wl,/usr/local/lib
+	gcc ${CFLAGS} ${OBJ} -o shuttlecp -lwiringPi -lnopoll -lcurl -Wl,-rpath -Wl,/usr/local/lib
 
 clean:
 	rm -f shuttlecp keys.h $(OBJ)
