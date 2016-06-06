@@ -15,7 +15,7 @@ void initialize_raspi_switch_states( SWITCH_STATES *raspi_switches ) {
     raspi_switches->prev_reconnect_requested  = 1;
 
     // also initilize the switch pins to be input
-//    wiringPiSetup();  // Moved this to the main program loop
+    wiringPiSetup(); 
     pinMode( SWITCH_FEED_HOLD,    INPUT );
     pinMode( SWITCH_RESUME,       INPUT );
     pinMode( SWITCH_RESET,        INPUT );
