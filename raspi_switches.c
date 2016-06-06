@@ -1,4 +1,5 @@
 
+#if GPIO_SUPPORT
 #include "raspi_switches.h"
 #include <wiringPi.h>
 
@@ -43,4 +44,5 @@ void read_raspi_switches( SWITCH_STATES *raspi_switches ) {
     return;
 }
 
+#endif
 
