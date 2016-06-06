@@ -25,14 +25,14 @@
 #include "websocket.h"
 #include <wiringPi.h>
 
-#define CNC_HOST     "127.0.0.1"    // Hostname where SPJS or bCNC is running
-#define CNC_PORT     "8080"         // Port for SPJS or bCNC.  Typically 8686 for Chillipeppr and 8080 for bCNC
+#define CNC_HOST      "127.0.0.1"         // Hostname where SPJS or bCNC is running
+#define CNC_PORT      "8989"              // Port for SPJS or bCNC.  Typically 8989 for Chillipeppr and 8080 for bCNC
 #define DEVICE_PATH   "/dev/ttyACM0"      // Path for SPJS to connect to GRBL or TinyG.  Not used for bCNC
 #define TINYG         0                   // set to 1 if you are using a TinyG
-#define BCNC          1                   // set to 1 if you are using bCNC instead of Chilipeppr
+#define BCNC          0                   // set to 1 if you are using bCNC instead of Chilipeppr
 #define CYCLE_TIME_MICROSECONDS 100000    // time of each main loop iteration
-#define MAX_FEED_RATE 1500.0   // (unit per minute - initially tested with millimeters)
-#define OVERSHOOT     1.06     // amount of overshoot for shuttle wheel
+#define MAX_FEED_RATE 1500.0              // (unit per minute - initially tested with millimeters)
+#define OVERSHOOT     1.06                // amount of overshoot for shuttle wheel
 
 // Each press of the increment button will toggle through 4 speed / distance
 // increments. Use the defines below to adjust the distance moved by 
