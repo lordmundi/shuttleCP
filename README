@@ -30,7 +30,7 @@ Build instructions:
 (written for Raspbian, but should work for others)
 
 1. Ensure openssl dev libraries are installed:
- sudo apt-get install libssl-dev build-essential
+ sudo apt-get install libssl-dev build-essential libcurl4-openssl-dev
 
 2. Download the nopoll library from here: http://www.aspl.es/nopoll/downloads/
 (I'm currently using version 0.2.7.b164 because I got a strange linking error when
@@ -40,8 +40,13 @@ Extract, configure, make, and install the nopoll library with the usual:
  make
  sudo make install
 
-3. Take a git clone of the wiringPi utility and use their included build script
-to build and install the library. Instructions are here: http://wiringpi.com/download-and-install/
+3. If you will have leds or switches hooked to a raspberry pi, take a git clone 
+of the wiringPi utility and use their included build script to build and install
+the library. Instructions are here: http://wiringpi.com/download-and-install/
+
+If you aren't using led's and switches, just edit the Makefile and change the 
+GPIO_SUPPORT to 0 to disable it.  You can also remove -lwiringPi from the libs
+line.
 
 4. Go into the ShuttleCP directory and run "make". Make sure you've edited
 any items from the "Configuration" section above first.
