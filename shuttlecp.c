@@ -375,6 +375,7 @@ main(int argc, char **argv)
 
     // initialize LEDs and switches
 #if GPIO_SUPPORT
+    wiringPiSetup(); 
     initialize_led_states( &led_states );
     initialize_raspi_switch_states( &raspi_switches );
     drive_leds( &led_states );

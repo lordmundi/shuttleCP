@@ -6,8 +6,8 @@ This code is meant to allow button, jog, and shuttle events from
 a Contour ShuttleXpress controller to flow to CNC machines
 The original branch of this code was developed for communication 
 with the Serial Port JSON server typically used with ChiliPeppr 
-driven CNC machines.  The latest version adds communication to
-CNC machines driven with bCNC.
+driven CNC machines.  
+The latest version adds communication to CNC machines driven with bCNC.
 
 
 Interface to Shuttle Contour Xpress based on "Contour ShuttlePro
@@ -18,17 +18,19 @@ Configuration instructions:
 
 1. Edit shuttlecp.c and update the following items at the top of the file:
 
-#define SPJS_HOST     "localhost"         // Hostname where SPJS is running
-#define SPJS_PORT     "8989"              // Port for SPJS
+#define CNC_HOST      "127.0.0.1"         // Hostname where SPJS or bCNC is running
+#define CNC_PORT      "8989"              // Port for SPJS or bCNC.  Typically 8989 for Chillipeppr and 8080 for bCNC
+#define DEVICE_PATH   "/dev/ttyACM0"      // Path for SPJS to connect to GRBL or TinyG.  Not used for bCNC
 #define TINYG         0                   // set to 1 if you are using a TinyG
-#define BCNC          1                   // set to 1 if you are using bCNC instead of Chilipeppr
+#define BCNC          0                   // set to 1 if you are using bCNC instead of Chilipeppr
 #define CYCLE_TIME_MICROSECONDS 100000    // time of each main loop iteration
-#define MAX_FEED_RATE 1500.0   // (unit per minute - initially tested with millimeters)
-#define OVERSHOOT     1.06     // amount of overshoot for shuttle wheel
+#define MAX_FEED_RATE 1500.0              // (unit per minute - initially tested with millimeters)
+#define OVERSHOOT     1.06                // amount of overshoot for shuttle wheel
 
 2. For ChiliPeppr, make sure ChiliPeppr is already connected to the SPJS 
 and opened the connection to the board, as this utility sends commands 
 assuming that CP has already opened the port at the correct baud rate.
+
 For bCNC, make sure that bCNC is running and connected to the GRBL board.
 
 
@@ -74,6 +76,7 @@ Running:
 1. For ChiliPeppr, first, make sure SPJS is already running and ChiliPeppr has 
 already opened a connection to your machine.  I run SPJS on the same raspberryPi 
 that I run the ShuttleCP utility on.
+
 For bCNC, make sure that bCNC is running and is connected to the GRBL board.
 
 2. Start up shuttlecp with an argument that is the device interface for your
