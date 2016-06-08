@@ -70,6 +70,10 @@ any items from the "Configuration" section above first.
 
  make
 
+I also do the following to install shuttlecp so that it can be run regardless
+of which folder you are in when you execute the program.
+ sudo make install
+
 
 Running:
 
@@ -78,6 +82,7 @@ already opened a connection to your machine.  I run SPJS on the same raspberryPi
 that I run the ShuttleCP utility on.
 
 For bCNC, make sure that bCNC is running and is connected to the GRBL board.
+All alarms must be clared and the CNC machine state is reported as "Idle".
 
 2. Start up shuttlecp with an argument that is the device interface for your
 ShuttleXpress.  Mine is /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
