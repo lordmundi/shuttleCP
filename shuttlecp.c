@@ -29,7 +29,7 @@
 
 #include "websocket.h"
 
-#define CNC_HOST      "127.0.0.1"         // Hostname where SPJS or bCNC is running
+#define CNC_HOST      "localhost"         // Hostname where SPJS or bCNC is running
 #define CNC_PORT      "8989"              // Port for SPJS or bCNC.  Typically 8989 for Chillipeppr and 8080 for bCNC
 #define DEVICE_PATH   "/dev/ttyACM0"      // Path for SPJS to connect to GRBL or TinyG.  Not used for bCNC
 #define TINYG         0                   // set to 1 if you are using a TinyG
@@ -375,6 +375,7 @@ main(int argc, char **argv)
 
     // initialize LEDs and switches
 #if GPIO_SUPPORT
+    wiringPiSetup(); 
     initialize_led_states( &led_states );
     initialize_raspi_switch_states( &raspi_switches );
     drive_leds( &led_states );
