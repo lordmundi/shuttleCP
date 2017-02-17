@@ -93,3 +93,20 @@ Use sudo so that wiringPi has access to GPIO pins:
 Or, you can use the "./shuttle" script, which effectively does the same thing.
 
 
+Autorun the shuttle script on boot using systemd in Raspbian Jessie:
+
+    Reference and more details at: http://www.raspberrypi-spy.co.uk/2015/10/how-to-autorun-a-python-script-on-boot-using-systemd/
+
+We first need to add a unit file that tells systemd that we want it to launch the shuttle script on boot once the GPIO service has been activated. To do so, simply copy the file shuttle.service found in the shuttleCP directory by using the following command:
+    sudo cp /home/pi/shuttleCP/shuttle.service /lib/systemd/system/
+
+Next, the permission on the unit file needs to be set to 644 :
+    sudo chmod 644 /lib/systemd/system/shuttle.service
+
+Last, we can tell systemd to start the script during the boot sequence and reboot the RPi:
+    sudo systemctl daemon-reload
+    sudo systemctl enable shuttle.service
+    sudo reboot
+
+You can confirm the new service is running by checking it's status:
+    sudo systemctl status shuttle.service
