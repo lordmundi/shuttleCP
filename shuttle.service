@@ -1,0 +1,10 @@
+[Unit]
+Description=ShuttleXpress controller for bCNC
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/home/pi/shuttleCP/shuttle
+
+[Install]
+WantedBy=multi-user.target
