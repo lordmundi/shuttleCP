@@ -8,5 +8,5 @@ function cleanup() {
 }
 
 echo "Starting shuttleCP ..."
-sudo ./shuttlecp /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
+sudo /home/pi/shuttleCP/shuttlecp /dev/input/by-id/usb-Contour_Design_ShuttleXpress-event-if00
 echo "Program terminated."
